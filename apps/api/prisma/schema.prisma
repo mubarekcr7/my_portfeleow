@@ -1,0 +1,169 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AdminRole {
+  ADMIN
+}
+
+enum ProjectStatus {
+  DRAFT
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum MessageStatus {
+  UNREAD
+  READ
+  ARCHIVED
+}
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique @db.VarChar(320)
+  passwordHash String
+  role         AdminRole @default(ADMIN)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastLoginAt  DateTime?
+}
+
+model Profile {
+  id                 String   @id @default("singleton")
+  name               String   @db.VarChar(120)
+  professionalTitle  String   @db.VarChar(180)
+  biography          String
+  email              String?  @db.VarChar(320)
+  location           String   @db.VarChar(120)
+  githubUrl          String?  @db.VarChar(500)
+  linkedInUrl        String?  @db.VarChar(500)
+  profileImage       String?  @db.VarChar(1000)
+  resumeFile         String?  @db.VarChar(1000)
+  seoTitle           String?  @db.VarChar(180)
+  seoDescription     String?  @db.VarChar(320)
+  updatedAt          DateTime @updatedAt
+}
+
+model Project {
+  id               String         @id @default(cuid())
+  title            String         @db.VarChar(180)
+  slug             String         @unique @db.VarChar(200)
+  shortDescription String         @db.VarChar(320)
+  fullDescription  String
+  problem          String?
+  solution         String?
+  features         String[]       @default([])
+  technologies     String[]       @default([])
+  category         String         @db.VarChar(80)
+  coverImage       String?        @db.VarChar(1000)
+  githubUrl        String?        @db.VarChar(500)
+  liveDemoUrl      String?        @db.VarChar(500)
+  status           ProjectStatus  @default(DRAFT)
+  featured         Boolean        @default(false)
+  displayOrder     Int            @default(0)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  images           ProjectImage[]
+
+  @@index([featured, displayOrder])
+  @@index([category, status])
+  @@index([createdAt])
+}
+
+model ProjectImage {
+  id          String   @id @default(cuid())
+  projectId   String
+  imageUrl    String   @db.VarChar(1000)
+  altText     String   @db.VarChar(240)
+  displayOrder Int     @default(0)
+  createdAt   DateTime @default(now())
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, displayOrder])
+}
+
+model Skill {
+  id          String   @id @default(cuid())
+  name        String   @unique @db.VarChar(100)
+  category    String   @db.VarChar(80)
+  description String?
+  icon        String?  @db.VarChar(80)
+  displayOrder Int     @default(0)
+  visibility  Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category, displayOrder])
+}
+
+model Education {
+  id           String    @id @default(cuid())
+  institution  String    @db.VarChar(180)
+  qualification String   @db.VarChar(180)
+  fieldOfStudy String    @db.VarChar(180)
+  startDate    DateTime?
+  endDate      DateTime?
+  description  String?
+  displayOrder Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([displayOrder, startDate])
+}
+
+model Experience {
+  id             String    @id @default(cuid())
+  organization   String    @db.VarChar(180)
+  role           String    @db.VarChar(180)
+  employmentType String    @db.VarChar(80)
+  startDate      DateTime?
+  endDate        DateTime?
+  description    String?
+  displayOrder   Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([displayOrder, startDate])
+}
+
+model Service {
+  id           String   @id @default(cuid())
+  title        String   @db.VarChar(160)
+  description  String
+  icon         String?  @db.VarChar(80)
+  active       Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([active, displayOrder])
+}
+
+model ContactMessage {
+  id          String        @id @default(cuid())
+  senderName  String        @db.VarChar(120)
+  senderEmail String        @db.VarChar(320)
+  subject     String        @db.VarChar(180)
+  message     String
+  status      MessageStatus @default(UNREAD)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status, createdAt])
+  @@index([senderEmail])
+}
+
+model SiteSettings {
+  id               String   @id @default("singleton")
+  siteTitle        String   @db.VarChar(180)
+  siteDescription  String   @db.VarChar(320)
+  socialLinks      Json     @default("{}")
+  contactEmail     String?  @db.VarChar(320)
+  themePreferences Json     @default("{}")
+  updatedAt        DateTime @updatedAt
+}

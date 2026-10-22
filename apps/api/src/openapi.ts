@@ -1,0 +1,23 @@
+export const openApiDocument = {
+  openapi: "3.1.0",
+  info: { title: "Mubarek Mohammed Portfolio API", version: "1.0.0", description: "Public portfolio content and administrator API." },
+  servers: [{ url: "/api/v1" }],
+  tags: [{ name: "Public" }, { name: "Contact" }, { name: "Authentication" }, { name: "Admin" }],
+  paths: {
+    "/profile": { get: { tags: ["Public"], summary: "Get public profile", responses: { "200": { description: "Profile data" } } } },
+    "/resume": { get: { tags: ["Public"], summary: "Download the current CV as a PDF attachment", responses: { "200": { description: "CV PDF download" }, "502": { description: "CV file unavailable or invalid" }, "503": { description: "No supported CV source configured" } } } },
+    "/projects": { get: { tags: ["Public"], summary: "List published projects", parameters: [{ name: "page", in: "query", schema: { type: "integer", minimum: 1 } }, { name: "limit", in: "query", schema: { type: "integer", minimum: 1, maximum: 50 } }, { name: "category", in: "query", schema: { type: "string" } }, { name: "search", in: "query", schema: { type: "string" } }], responses: { "200": { description: "Project page and pagination metadata" } } } },
+    "/projects/{slug}": { get: { tags: ["Public"], summary: "Get project by slug", parameters: [{ name: "slug", in: "path", required: true, schema: { type: "string" } }], responses: { "200": { description: "Project data" }, "404": { description: "Project not found" } } } },
+    "/skills": { get: { tags: ["Public"], summary: "List visible skills", responses: { "200": { description: "Skills" } } } },
+    "/education": { get: { tags: ["Public"], summary: "List education", responses: { "200": { description: "Education records" } } } },
+    "/experience": { get: { tags: ["Public"], summary: "List experience", responses: { "200": { description: "Experience records" } } } },
+    "/services": { get: { tags: ["Public"], summary: "List active services", responses: { "200": { description: "Services" } } } },
+    "/contact": { post: { tags: ["Contact"], summary: "Submit a contact message", requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["name", "email", "subject", "message"], properties: { name: { type: "string", minLength: 2, maxLength: 120 }, email: { type: "string", format: "email" }, subject: { type: "string", minLength: 3, maxLength: 180 }, message: { type: "string", minLength: 10, maxLength: 5000 }, website: { type: "string", maxLength: 0 } } } } } }, responses: { "201": { description: "Message stored; email notification status included" }, "400": { description: "Validation failed" }, "429": { description: "Rate limited" } } } },
+    "/github/repositories": { get: { tags: ["Public"], summary: "Fetch cached public GitHub repositories", responses: { "200": { description: "Non-fork public repositories from the configured GitHub account, cached for up to five minutes" }, "503": { description: "GitHub temporarily unavailable" } } } },
+    "/auth/csrf": { get: { tags: ["Authentication"], summary: "Create a CSRF token", responses: { "200": { description: "CSRF token" } } } },
+    "/auth/login": { post: { tags: ["Authentication"], summary: "Create admin session", responses: { "200": { description: "Authenticated" }, "401": { description: "Invalid credentials" } } } },
+    "/auth/logout": { post: { tags: ["Authentication"], summary: "End admin session", responses: { "204": { description: "Session ended" } } } },
+    "/admin/{resource}": { get: { tags: ["Admin"], summary: "List admin resource (session required)", security: [{ cookieAuth: [] }], responses: { "200": { description: "Paginated resource list" }, "401": { description: "Authentication required" } } }, post: { tags: ["Admin"], summary: "Create admin resource", security: [{ cookieAuth: [] }], responses: { "201": { description: "Created" } } } },
+  },
+  components: { securitySchemes: { cookieAuth: { type: "apiKey", in: "cookie", name: "mubarek.sid" } } },
+} as const;

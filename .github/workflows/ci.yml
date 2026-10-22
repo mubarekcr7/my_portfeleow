@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://portfolio:portfolio_dev_password@localhost:5432/mubarek_portfolio?schema=public
+      SESSION_SECRET: ci-only-session-secret-that-is-not-used-in-production
+      WEB_ORIGIN: http://localhost:5173
+      VITE_API_BASE: /api/v1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run prisma:generate --workspace @mubarek/api
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npm audit --omit=dev
