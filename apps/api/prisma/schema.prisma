@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
 }
 
 enum AdminRole {
@@ -26,7 +26,7 @@ enum MessageStatus {
 model AdminUser {
   id           String    @id @default(cuid())
   email        String    @unique @db.VarChar(320)
-  passwordHash String
+  passwordHash String    @db.VarChar(255)
   role         AdminRole @default(ADMIN)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -34,19 +34,19 @@ model AdminUser {
 }
 
 model Profile {
-  id                 String   @id @default("singleton")
-  name               String   @db.VarChar(120)
-  professionalTitle  String   @db.VarChar(180)
-  biography          String
-  email              String?  @db.VarChar(320)
-  location           String   @db.VarChar(120)
-  githubUrl          String?  @db.VarChar(500)
-  linkedInUrl        String?  @db.VarChar(500)
-  profileImage       String?  @db.VarChar(1000)
-  resumeFile         String?  @db.VarChar(1000)
-  seoTitle           String?  @db.VarChar(180)
-  seoDescription     String?  @db.VarChar(320)
-  updatedAt          DateTime @updatedAt
+  id                String   @id @default("singleton")
+  name              String   @db.VarChar(120)
+  professionalTitle String   @db.VarChar(180)
+  biography         String   @db.Text
+  email             String?  @db.VarChar(320)
+  location          String   @db.VarChar(120)
+  githubUrl         String?  @db.VarChar(500)
+  linkedInUrl       String?  @db.VarChar(500)
+  profileImage      String?  @db.VarChar(1000)
+  resumeFile        String?  @db.VarChar(1000)
+  seoTitle          String?  @db.VarChar(180)
+  seoDescription    String?  @db.VarChar(320)
+  updatedAt         DateTime @updatedAt
 }
 
 model Project {
@@ -54,11 +54,11 @@ model Project {
   title            String         @db.VarChar(180)
   slug             String         @unique @db.VarChar(200)
   shortDescription String         @db.VarChar(320)
-  fullDescription  String
-  problem          String?
-  solution         String?
-  features         String[]       @default([])
-  technologies     String[]       @default([])
+  fullDescription  String         @db.Text
+  problem          String?        @db.Text
+  solution         String?        @db.Text
+  features         Json           @default("[]")
+  technologies     Json           @default("[]")
   category         String         @db.VarChar(80)
   coverImage       String?        @db.VarChar(1000)
   githubUrl        String?        @db.VarChar(500)
@@ -76,42 +76,42 @@ model Project {
 }
 
 model ProjectImage {
-  id          String   @id @default(cuid())
-  projectId   String
-  imageUrl    String   @db.VarChar(1000)
-  altText     String   @db.VarChar(240)
-  displayOrder Int     @default(0)
-  createdAt   DateTime @default(now())
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  id           String   @id @default(cuid())
+  projectId    String
+  imageUrl     String   @db.VarChar(1000)
+  altText      String   @db.VarChar(240)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId, displayOrder])
 }
 
 model Skill {
-  id          String   @id @default(cuid())
-  name        String   @unique @db.VarChar(100)
-  category    String   @db.VarChar(80)
-  description String?
-  icon        String?  @db.VarChar(80)
-  displayOrder Int     @default(0)
-  visibility  Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  name         String   @unique @db.VarChar(100)
+  category     String   @db.VarChar(80)
+  description  String?  @db.Text
+  icon         String?  @db.VarChar(80)
+  displayOrder Int      @default(0)
+  visibility   Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([category, displayOrder])
 }
 
 model Education {
-  id           String    @id @default(cuid())
-  institution  String    @db.VarChar(180)
-  qualification String   @db.VarChar(180)
-  fieldOfStudy String    @db.VarChar(180)
-  startDate    DateTime?
-  endDate      DateTime?
-  description  String?
-  displayOrder Int       @default(0)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id            String    @id @default(cuid())
+  institution   String    @db.VarChar(180)
+  qualification String    @db.VarChar(180)
+  fieldOfStudy  String    @db.VarChar(180)
+  startDate     DateTime?
+  endDate       DateTime?
+  description   String?   @db.Text
+  displayOrder  Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@index([displayOrder, startDate])
 }
@@ -123,7 +123,7 @@ model Experience {
   employmentType String    @db.VarChar(80)
   startDate      DateTime?
   endDate        DateTime?
-  description    String?
+  description    String?   @db.Text
   displayOrder   Int       @default(0)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -134,7 +134,7 @@ model Experience {
 model Service {
   id           String   @id @default(cuid())
   title        String   @db.VarChar(160)
-  description  String
+  description  String   @db.Text
   icon         String?  @db.VarChar(80)
   active       Boolean  @default(true)
   displayOrder Int      @default(0)
@@ -149,7 +149,7 @@ model ContactMessage {
   senderName  String        @db.VarChar(120)
   senderEmail String        @db.VarChar(320)
   subject     String        @db.VarChar(180)
-  message     String
+  message     String        @db.Text
   status      MessageStatus @default(UNREAD)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
@@ -166,4 +166,12 @@ model SiteSettings {
   contactEmail     String?  @db.VarChar(320)
   themePreferences Json     @default("{}")
   updatedAt        DateTime @updatedAt
+}
+
+model Session {
+  sid     String   @id @db.VarChar(255)
+  data    Json
+  expires DateTime @db.DateTime(3)
+
+  @@index([expires])
 }

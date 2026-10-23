@@ -1,14 +1,14 @@
 import { app } from "./app.js";
 import { env } from "./config/env.js";
-import { prisma, sessionPool } from "./config/database.js";
+import { prisma } from "./config/database.js";
 import { logger } from "./utils/logger.js";
 
-const server = app.listen(env.PORT, () => logger.info({ port: env.PORT }, "Portfolio API listening"));
+const server = app.listen(env.PORT, "0.0.0.0", () => logger.info({ port: env.PORT }, "Portfolio API listening"));
 
 const shutdown = (signal: string): void => {
   logger.info({ signal }, "Shutting down portfolio API");
   server.close(() => {
-    void Promise.all([prisma.$disconnect(), sessionPool.end()]).finally(() => process.exit(0));
+    void prisma.$disconnect().finally(() => process.exit(0));
   });
   setTimeout(() => process.exit(1), 10_000).unref();
 };

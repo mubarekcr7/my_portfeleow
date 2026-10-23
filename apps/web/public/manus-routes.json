@@ -1,0 +1,22 @@
+{
+  "routes": [
+    { "path": "/", "title": "Home" },
+    { "path": "/about", "title": "About" },
+    { "path": "/skills", "title": "Skills" },
+    { "path": "/projects", "title": "Projects" },
+    { "path": "/projects/:slug", "title": "Project detail" },
+    { "path": "/education", "title": "Education" },
+    { "path": "/journey", "title": "Journey" },
+    { "path": "/experience", "title": "Experience" },
+    { "path": "/services", "title": "Services" },
+    { "path": "/contact", "title": "Contact" },
+    { "path": "/resume", "title": "Resume" },
+    { "path": "/admin/login", "title": "Administrator sign in" },
+    { "path": "/admin", "title": "Administrator dashboard" },
+    { "path": "/admin/:resource", "title": "Manage portfolio content" },
+    { "path": "/admin/:resource/new", "title": "Create portfolio content" },
+    { "path": "/admin/:resource/:id/edit", "title": "Edit portfolio content" },
+    { "path": "/admin/profile", "title": "Edit profile" },
+    { "path": "/admin/settings", "title": "Site settings" }
+  ]
+}

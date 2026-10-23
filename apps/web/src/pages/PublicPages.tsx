@@ -13,7 +13,14 @@ import { EmptyState, ErrorState, Eyebrow, Loading, ProjectCard, SectionHeading }
 
 const summary = "I am a Software Engineering student at Wolkite University with a strong interest in web and mobile application development. I work with HTML, CSS, JavaScript, React, Flutter, Dart, Java, and MySQL. I enjoy solving problems, building useful digital products, and continuously improving my technical skills through practical projects.";
 const roles = ["Software Engineering Student", "Aspiring Full-Stack Developer", "Flutter Developer"];
-const resumeDownloadUrl = `${import.meta.env.VITE_API_BASE ?? "/api/v1"}/resume`;
+const defaultResumeAsset = "/Mubarek-Mohammed-CV.pdf";
+const resumeUrlForProfile = (resumeFile?: string | null): string => resumeFile === defaultResumeAsset
+  ? defaultResumeAsset
+  : resumeFile?.startsWith("/manus-storage/")
+    ? resumeFile
+    : resumeFile
+      ? `${import.meta.env.VITE_API_BASE ?? "/api/v1"}/resume`
+      : defaultResumeAsset;
 const fallbackSkills = [
   { id: "html", name: "HTML", category: "Frontend development", description: null },
   { id: "css", name: "CSS", category: "Frontend development", description: null },
@@ -31,9 +38,10 @@ export function HomePage(): React.JSX.Element {
   const profile = useProfile();
   const projects = useQuery<Page<Project>>({ queryKey: ["featured-projects"], queryFn: () => api("/projects?featured=true&limit=3") });
   const github = useQuery<GithubRepository[]>({ queryKey: ["github-repositories"], queryFn: () => api("/github/repositories"), staleTime: 60_000, refetchInterval: 60_000 });
+  const resumeDownloadUrl = resumeUrlForProfile(profile.data?.resumeFile);
   const name = profile.data?.name ?? "Mubarek Mohammed";
   const githubUrl = profile.data?.githubUrl || "https://github.com/mubarekcr7";
-  const examRepository = github.data?.find((repository) => repository.name.toLowerCase() === "examschedulingsystem");
+  const examRepository = github.data?.find((repository) => ["exam-scheduler", "examschedulingsystem"].includes(repository.name.toLowerCase()));
   const bankingRepository = github.data?.find((repository) => repository.name.toLowerCase() === "banking_management");
   const savedProjects = projects.data?.data ?? [];
   const showExamRepository = Boolean(examRepository && !savedProjects.some((project) => project.slug === "student-exam-scheduling-system"));
@@ -86,7 +94,7 @@ export function HomePage(): React.JSX.Element {
             <div className="hero-actions">
               <Link className="button button-primary" to="/projects">View my projects <ArrowUpRight size={16} /></Link>
               <Link className="button button-secondary" to="/contact">Contact me <ArrowUpRight size={16} /></Link>
-              <a className="cv-link" href={resumeDownloadUrl}>Download CV <ArrowDown size={14} /></a>
+              <a className="cv-link" href={resumeDownloadUrl} download="Mubarek-Mohammed-CV.pdf">Download CV <ArrowDown size={14} /></a>
             </div>
             <div className="hero-socials">
               <a href={githubUrl} target="_blank" rel="noreferrer"><Github size={16} /> GitHub <ArrowUpRight size={12} /></a>
@@ -181,7 +189,7 @@ export function ProjectsPage(): React.JSX.Element {
   const projects = useQuery<Page<Project>>({ queryKey: ["projects", page, filter, search], queryFn: () => api(`/projects?${params}`) });
   const github = useQuery<GithubRepository[]>({ queryKey: ["github-repositories"], queryFn: () => api("/github/repositories"), staleTime: 60_000, refetchInterval: 60_000 });
   const storedProjects = projects.data?.data ?? [];
-  const examRepository = github.data?.find((repository) => repository.name.toLowerCase() === "examschedulingsystem");
+  const examRepository = github.data?.find((repository) => ["exam-scheduler", "examschedulingsystem"].includes(repository.name.toLowerCase()));
   const bankingRepository = github.data?.find((repository) => repository.name.toLowerCase() === "banking_management");
   const queryText = search.trim().toLowerCase();
   const matchesExamSearch = !queryText || `student exam scheduler flutter java ${examRepository?.description ?? ""} ${examRepository?.language ?? ""}`.toLowerCase().includes(queryText);
@@ -304,8 +312,9 @@ function Field({ label, name, type = "text", register, error }: { label: string;
 
 export function ResumePage(): React.JSX.Element {
   const profile = useProfile();
+  const resumeDownloadUrl = resumeUrlForProfile(profile.data?.resumeFile);
   return <PageFrame eyebrow="CURRICULUM VITAE" title="A snapshot of my journey." lead="A concise overview of my studies, skills, and project work.">
-    <div className="resume-ready"><p>{profile.data?.resumeFile ? "Download Mubarek’s current CV." : "Download the current CV."}</p><a className="button button-primary" href={resumeDownloadUrl}>Download CV <ArrowDown size={15} /></a>{profile.isError && <p className="subtle-note">Using the configured public CV file.</p>}</div>
+    <div className="resume-ready"><p>{profile.data?.resumeFile ? "Download Mubarek’s current CV." : "Download the current CV."}</p><a className="button button-primary" href={resumeDownloadUrl} download="Mubarek-Mohammed-CV.pdf">Download CV <ArrowDown size={15} /></a>{profile.isError && <p className="subtle-note">Using the configured public CV file.</p>}</div>
   </PageFrame>;
 }
 

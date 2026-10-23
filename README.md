@@ -1,127 +1,84 @@
 # Mubarek Mohammed Portfolio
 
-A React and TypeScript portfolio with a versioned Express API, PostgreSQL through Prisma, a cookie-authenticated administrator area, GitHub repository data, contact-message persistence, and optional Cloudinary/SMTP integrations.
+A React and TypeScript portfolio with a versioned Express API, a cookie-authenticated administrator area, GitHub repository data, durable contact messages, and optional Cloudinary/SMTP integrations. The original PostgreSQL schema has been adapted for MySQL-compatible storage. The site retains its existing pages, project content, and dark technical visual style.
 
 ## Requirements
 
-- Windows 10/11 with PowerShell 5.1 or PowerShell 7
-- Node.js 24 LTS and npm 11
-- Docker Desktop with Linux containers, or a PostgreSQL 16+ server
+- Node.js 24 LTS and npm 11.6.2 (pinned in `packageManager`)
+- Docker with MySQL 8.4 for a local database, or another MySQL-compatible `DATABASE_URL`
 - Git
 
-Use `npm.cmd` in PowerShell if your execution policy blocks the `npm.ps1` shim. No PowerShell execution policy change is needed.
+On Windows, use `npm.cmd` in PowerShell if the `npm.ps1` shim is blocked; no PowerShell execution-policy change is needed.
 
-## Local Setup
+## Local setup
 
-From this folder:
+Copy `.env.example` to `.env`, then replace `SESSION_SECRET` with a random value of at least 32 characters. Keep `.env` out of Git. The example's `SESSION_COOKIE_SECURE=false` and `SESSION_COOKIE_SAME_SITE=lax` are only for plain-HTTP localhost; do not use them for HTTPS Preview or the public website.
 
-```powershell
-Copy-Item .env.example .env
+Start MySQL and set up the project:
+
+```sh
+npm run db:up
+npm ci
+npm run prisma:generate --workspace @mubarek/api
+npm run db:migrate
+npm run db:seed
+npm run admin:create
+npm run dev
 ```
 
-Edit `.env` and replace `SESSION_SECRET` with a random value of at least 32 characters. Keep `.env` out of Git. The sample Compose database credentials are for local development only.
+The website and admin login run at `http://localhost:3000`. Vite proxies `/api` and `/healthz` to the API at `http://localhost:4001`. The API does not expose public administrator registration. Create the first administrator through the interactive terminal prompt; its password is hashed with Argon2id and never written to project files. Seed records include in-progress and draft projects; review their details and publish only the work you want visible from the admin area.
 
-Start PostgreSQL with Docker Desktop:
-
-```powershell
-npm.cmd run db:up
-```
-
-Or create a PostgreSQL database and user yourself, then set `DATABASE_URL` in `.env` to that database.
-
-Install, generate the client, migrate, and seed:
-
-```powershell
-npm.cmd install
-npm.cmd run prisma:generate --workspace @mubarek/api
-npm.cmd run db:migrate
-npm.cmd run db:seed
-```
-
-Create the first administrator interactively. The password is entered in the terminal, hashed with Argon2id, and is never written to project files:
-
-```powershell
-npm.cmd run admin:create
-```
-
-Start the web app and API together:
-
-```powershell
-npm.cmd run dev
-```
-
-- Website: <http://localhost:5173>
-- Admin login: <http://localhost:5173/admin/login>
-- API health: <http://localhost:4000/healthz>
-- API readiness: <http://localhost:4000/healthz/ready>
-- OpenAPI docs: <http://localhost:4000/api/v1/docs>
-
-The API does not expose administrator registration. Seed records contain only the supplied biography, skills, university, and project concepts. Projects begin as drafts and must be reviewed and published in the admin area.
-
-To use a local profile photo, place the image at `apps/web/public/profile.jpg`; the homepage falls back to its initials artwork until that file is present. The admin profile also accepts a hosted profile-image URL.
+To use the included local profile image, keep `apps/web/public/profile.jpg`; the homepage falls back to initials artwork when that image is absent. The admin profile also accepts a hosted profile-image URL.
 
 ## Configuration
 
 | Variable | Purpose |
 | --- | --- |
-| `DATABASE_URL` | PostgreSQL connection used by Prisma and sessions |
-| `SESSION_SECRET` | At least 32 characters; rotate per environment |
-| `WEB_ORIGIN` | Exact frontend origin for credentialed CORS |
-| `PUBLIC_CONTACT_EMAIL` | Optional contact-notification recipient |
-| `PUBLIC_LINKEDIN_URL` | Optional LinkedIn profile URL |
-| `PUBLIC_CV_URL` | Public PDF fallback served by `/api/v1/resume`; defaults to the file in `my-cv` without listing that repository |
-| `GITHUB_USERNAME` | Public repository account; defaults to `mubarekcr7` |
-| `GITHUB_TOKEN` | Optional server-side token for higher GitHub API limits |
-| `SMTP_*` | Optional outbound email transport; messages are still stored if email fails |
-| `CLOUDINARY_*` | Optional production media storage; required to enable CV/image upload |
-| `SITE_URL` | Public origin used to generate the sitemap and robots file during frontend build |
+| `DATABASE_URL` | MySQL/MariaDB DSN used by Prisma and persistent admin sessions. |
+| `SESSION_SECRET` | At least 32 characters; use a protected project value for managed Preview and production. |
+| `SESSION_COOKIE_SECURE` / `SESSION_COOKIE_SAME_SITE` | Managed default: `true` / `none`. The local `.env.example` sets `false` / `lax` for localhost HTTP only. |
+| `WEB_ORIGIN` | Exact frontend origin for credentialed CORS; local default is `http://localhost:3000`. Published frontend and API share one origin. |
+| `PUBLIC_CONTACT_EMAIL` | Optional contact-notification recipient. |
+| `PUBLIC_LINKEDIN_URL` | Optional LinkedIn profile URL. |
+| `PUBLIC_CV_URL` | Public PDF fallback served by `/api/v1/resume`. |
+| `GITHUB_USERNAME` / `GITHUB_TOKEN` | Public repository account and optional server-side token for higher GitHub API limits. |
+| `SMTP_*` | Optional outbound email transport; contact messages remain in the database if delivery is unavailable. |
+| `CLOUDINARY_*` | Optional credentials for profile/project media uploads. |
+| `SITE_URL` | Optional public URL used when generating canonical/sitemap build metadata. |
 
 Never put credentials in `VITE_*` variables. Only public, non-secret frontend settings belong there.
+
+## Data and migrations
+
+Prisma uses the MySQL provider and MariaDB driver adapter. Project `features` and `technologies` remain JSON arrays; existing relations and status enums are retained. The old PostgreSQL migration history is archived under `apps/api/prisma/migrations-postgresql-archive`, and a fresh MySQL migration is used by the managed database. No PostgreSQL instance or export was supplied, so this conversion does not copy rows from an external database. The seed upserts the repository's starter profile, skills, education, settings, and projects without overwriting existing records.
+
+`npm run db:migrate` is for local Prisma development. To apply the committed schema to the managed database, use `npm run db:deploy`; `npm run db:seed` adds the initial content. The initial MySQL migration and idempotent repository seed have already been applied to this project's managed database. The managed development and published application share the same database. Do not run tests or cleanup scripts that write/delete sample content against it.
 
 ## Scripts
 
 | Command | Purpose |
 | --- | --- |
-| `npm.cmd run dev` | Start Vite and Express |
-| `npm.cmd run typecheck` | Typecheck both workspaces |
-| `npm.cmd test` | Run Vitest unit and API tests |
-| `npm.cmd run test:e2e` | Run Playwright public-site tests |
-| `npm.cmd run build` | Build API and frontend for production |
-| `npm.cmd run db:migrate` | Create/apply a local Prisma migration |
-| `npm.cmd run db:seed` | Add initial portfolio records idempotently |
-| `npm.cmd run admin:create` | Securely create an administrator |
-| `npm.cmd audit --omit=dev` | Audit production dependencies |
+| `npm run dev` | Start Vite and Express. |
+| `npm run build` | Build the frontend and API. |
+| `npm run typecheck` | Typecheck both workspaces. |
+| `npm test` | Run database-independent unit and API tests. |
+| `npm run test:e2e` | Run Playwright public-site tests. |
+| `npm run db:up` / `npm run db:down` | Start/stop local MySQL. |
+| `npm run db:migrate` | Create/apply a local Prisma migration. |
+| `npm run db:deploy` | Apply committed migrations (also used for a fresh managed schema). |
+| `npm run db:seed` | Idempotently add starter portfolio content. |
+| `npm run admin:create` | Securely create the first administrator. |
 
-For Playwright's first run, install a browser if required:
+The existing API unit suite avoids database writes. Database-integrated admin/contact verification requires a separate isolated MySQL instance.
 
-```powershell
-npx playwright install chromium
-```
+## Administrator and integrations
 
-## Admin Features
+The admin area provides database-backed overview counts, paginated/searchable projects, skills, education, experience, services and messages, create/edit/delete flows, message status updates, project feature/order fields, project galleries, profile and SEO settings, and protected Cloudinary upload controls. Every admin API route checks the session; browser mutations also require a CSRF token. Uploaded files are not stored on the container filesystem.
 
-The administrator area provides database-backed overview counts, paginated and searchable projects/skills/education/experience/services/messages, create/edit/delete flows, message status updates, project feature/order fields, project gallery endpoints, profile and SEO settings, and protected Cloudinary upload controls. Every admin API route checks the session; browser mutations also require a CSRF token.
+Cloudinary and SMTP remain optional. Leave credentials unset if uploads/email are unused. GitHub repository data is fetched server-side from the public profile, with an optional token to raise API limits.
 
-Image and CV uploads accept JPEG, PNG, WebP, or PDF (up to 10 MB), check file signatures, and require Cloudinary credentials. Local filesystem upload storage is intentionally not used because many production hosts have ephemeral disks. Project galleries can be uploaded, listed, and removed from the project editor.
+## Managed hosting
 
-## Tests and Database
+The site uses the platform's managed MySQL database. The static host serves the built React output and routes `/api/*` and `/healthz` to the Express container; the SPA fallback supports direct visits to portfolio, project-detail, and nested admin routes. The container binds to the platform-provided `PORT` (3000 by default). `/healthz/ready` is unauthenticated and checks the database connection.
 
-Vitest includes contact-schema and database-independent API tests for health, authorization, route errors, and invalid contact input. Those tests do not require a running PostgreSQL server. Full migration, seed, contact-persistence, authenticated CRUD, and end-to-end admin workflow verification require a separate PostgreSQL test database and are not run automatically against production.
-
-The Playwright suite covers public homepage navigation, a project not-found state, contact validation, and mobile navigation. It does not create or delete database content.
-
-## Production Deployment
-
-1. Provision managed PostgreSQL, a Node.js API host, and a static frontend host. Configure Cloudinary and SMTP accounts only if uploads/email are needed.
-2. Configure API environment variables: production `DATABASE_URL`, a fresh `SESSION_SECRET`, exact `WEB_ORIGIN`, and optional integration credentials. Use HTTPS. The API sets `Secure`, `HttpOnly`, `SameSite=Lax` session cookies and trusts one reverse proxy.
-3. Build/deploy the API with `npm ci`, `npm run prisma:generate --workspace @mubarek/api`, and `npm run build --workspace @mubarek/api`; start using `npm run start --workspace @mubarek/api`.
-4. Before release, run `npm run prisma:deploy --workspace @mubarek/api` against the production database. Never use `migrate dev` against production.
-5. Create the first administrator in a trusted one-off shell with `npm run admin:create --workspace @mubarek/api`.
-6. Build the frontend with `SITE_URL=https://your-domain.example npm run build --workspace @mubarek/web`. Set the frontend API base to the API origin's `/api/v1` if deploying the web and API on different origins; also set API `WEB_ORIGIN` to the frontend origin.
-7. Configure static-host rewrites to serve `index.html` for React Router routes. The API's `/healthz` is a liveness endpoint and `/healthz/ready` checks PostgreSQL.
-
-The frontend/API split must use HTTPS and a credentialed CORS allowlist. If cross-site cookie deployment is required, configure `SameSite=None; Secure`, explicit CSRF validation, and matching CORS origins before launch; do not use wildcard origins. Back up PostgreSQL regularly and test restoration. Keep media credentials and SMTP secrets on the API only.
-
-## Security Notes
-
-This is a deployable foundation, not a claim of perfect security. Before a public launch, run the full integration/e2e suites against an isolated database, configure HTTPS and production CORS, rotate secrets, set up email and media providers, review hosting proxy/cookie behavior, and add operational monitoring/backups. Uploaded media deletion should be reconciled with project/gallery deletion as the media lifecycle is finalized.
+For any fresh target database, apply `npm run db:deploy` and `npm run db:seed` before publication. The existing `npm run admin:create` command securely prompts for the first administrator in a trusted terminal; public registration is not enabled. Managed Preview and production default to `SameSite=None; Secure` cookies and trust one platform reverse proxy. Database records live in MySQL, not the temporary container filesystem.

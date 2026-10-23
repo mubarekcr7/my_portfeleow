@@ -16,6 +16,17 @@ contentRouter.get("/resume", asyncHandler(async (_request, response) => {
     logger.warn({ err: error }, "Using configured public CV because profile storage is unavailable");
   }
 
+  if (
+    resumeUrl === "/Mubarek-Mohammed-CV.pdf" ||
+    (resumeUrl.startsWith("/manus-storage/") &&
+      !resumeUrl.includes("?") &&
+      !resumeUrl.includes("#") &&
+      !resumeUrl.split("/").some((segment) => segment === "." || segment === ".."))
+  ) {
+    response.redirect(302, resumeUrl);
+    return;
+  }
+
   const parsedUrl = new URL(resumeUrl);
   if (!["raw.githubusercontent.com", "res.cloudinary.com"].includes(parsedUrl.hostname)) {
     throw new HttpError(503, "The configured CV host is not supported.");
@@ -85,9 +96,9 @@ contentRouter.get("/projects", asyncHandler(async (request, response) => {
     ...(query.category ? { category: query.category } : {}),
     ...(query.featured === undefined ? {} : { featured: query.featured }),
     ...(query.search ? { OR: [
-      { title: { contains: query.search, mode: "insensitive" as const } },
-      { shortDescription: { contains: query.search, mode: "insensitive" as const } },
-      { technologies: { has: query.search } },
+      { title: { contains: query.search } },
+      { shortDescription: { contains: query.search } },
+      { technologies: { array_contains: query.search } },
     ] } : {}),
   };
   const [items, total] = await prisma.$transaction([

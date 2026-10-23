@@ -153,7 +153,7 @@ adminRouter.get("/:resource", asyncHandler(async (request, response) => {
   const config = getResource(resourceName);
   const query = z.object({ page: z.coerce.number().int().min(1).default(1), limit: z.coerce.number().int().min(1).max(100).default(20), search: z.string().trim().max(100).optional(), status: z.string().max(40).optional() }).parse(request.query);
   const where = {
-    ...(query.search ? { OR: config.searchable.map((field) => ({ [field]: { contains: query.search, mode: "insensitive" } })) } : {}),
+    ...(query.search ? { OR: config.searchable.map((field) => ({ [field]: { contains: query.search } })) } : {}),
     ...(query.status && resourceName === "messages" ? { status: query.status } : {}),
   };
   const [items, total] = await Promise.all([

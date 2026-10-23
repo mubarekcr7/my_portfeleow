@@ -7,10 +7,12 @@ dotenv.config({ path: resolve(dirname(fileURLToPath(import.meta.url)), "../../..
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-  PORT: z.coerce.number().int().min(1).max(65535).default(4000),
-  WEB_ORIGIN: z.url().default("http://localhost:5173"),
-  DATABASE_URL: z.url().startsWith("postgresql://").or(z.url().startsWith("postgres://")),
+  PORT: z.coerce.number().int().min(1).max(65535).default(3000),
+  WEB_ORIGIN: z.url().default("http://localhost:3000"),
+  DATABASE_URL: z.url().startsWith("mysql://"),
   SESSION_SECRET: z.string().min(32),
+  SESSION_COOKIE_SECURE: z.stringbool().default(true),
+  SESSION_COOKIE_SAME_SITE: z.enum(["lax", "strict", "none"]).default("none"),
   PUBLIC_CONTACT_EMAIL: z.email().optional().or(z.literal("")),
   PUBLIC_LINKEDIN_URL: z.url().optional().or(z.literal("")),
   PUBLIC_CV_URL: z.url().default("https://raw.githubusercontent.com/mubarekcr7/my-cv/main/%2B123-456-7890.pdf"),

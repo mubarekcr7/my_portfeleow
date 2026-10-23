@@ -4,6 +4,7 @@ import { rateLimit } from "express-rate-limit";
 import argon2 from "argon2";
 import { z } from "zod";
 import { prisma } from "../config/database.js";
+import { sessionCookieAttributes } from "../config/session-cookie.js";
 import { asyncHandler } from "../middleware/async-handler.js";
 import { requireAdmin, requireCsrf } from "../middleware/auth.js";
 import { HttpError } from "../utils/http-error.js";
@@ -44,7 +45,7 @@ authRouter.post("/login", loginLimiter, requireCsrf, asyncHandler(async (request
 authRouter.post("/logout", requireAdmin, requireCsrf, (request, response, next) => {
   request.session.destroy((error) => {
     if (error) return next(error);
-    response.clearCookie("mubarek.sid", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production" });
+    response.clearCookie("mubarek.sid", sessionCookieAttributes);
     response.status(204).end();
   });
 });

@@ -1,20 +1,21 @@
 services:
-  postgres:
-    image: postgres:17-alpine
+  mysql:
+    image: mysql:8.4
     restart: unless-stopped
     environment:
-      POSTGRES_DB: mubarek_portfolio
-      POSTGRES_USER: portfolio
-      POSTGRES_PASSWORD: portfolio_dev_password
+      MYSQL_DATABASE: mubarek_portfolio
+      MYSQL_USER: portfolio
+      MYSQL_PASSWORD: portfolio_dev_password
+      MYSQL_ROOT_PASSWORD: mysql_root_dev_password
     ports:
-      - "5432:5432"
+      - "3306:3306"
     volumes:
-      - portfolio_postgres:/var/lib/postgresql/data
+      - portfolio_mysql:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U portfolio -d mubarek_portfolio"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -pmysql_root_dev_password --silent"]
       interval: 5s
       timeout: 3s
       retries: 10
 
 volumes:
-  portfolio_postgres:
+  portfolio_mysql:

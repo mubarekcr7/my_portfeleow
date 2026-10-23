@@ -9,27 +9,30 @@
   "scripts": {
     "dev": "concurrently -k -n WEB,API -c blue,green \"npm:dev:web\" \"npm:dev:api\"",
     "dev:web": "npm run dev --workspace @mubarek/web",
-    "dev:api": "npm run dev --workspace @mubarek/api",
+    "dev:api": "cross-env PORT=4001 npm run dev --workspace @mubarek/api",
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "test:e2e": "playwright test",
-    "db:up": "docker compose up -d postgres",
+    "db:up": "docker compose up -d mysql",
     "db:down": "docker compose down",
     "db:migrate": "npm run prisma:migrate --workspace @mubarek/api",
     "db:seed": "npm run prisma:seed --workspace @mubarek/api",
-    "admin:create": "npm run admin:create --workspace @mubarek/api"
+    "admin:create": "npm run admin:create --workspace @mubarek/api",
+    "db:deploy": "npm run prisma:deploy --workspace @mubarek/api"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1",
     "@playwright/test": "^1.56.1",
+    "concurrently": "^9.2.1",
+    "cross-env": "10.1.0",
     "typescript": "^5.9.3"
   },
   "allowScripts": {
-    "@prisma/client@6.19.3": true,
     "argon2@0.44.0": true,
     "esbuild@0.28.2": true,
     "prisma@7.10.1": true,
-    "@prisma/engines@7.10.1": true
-  }
+    "@prisma/engines@7.10.1": true,
+    "@prisma/client@7.10.1": true
+  },
+  "packageManager": "npm@11.6.2"
 }

@@ -2,10 +2,12 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 
 process.env.NODE_ENV = "test";
-process.env.PORT = "4000";
-process.env.WEB_ORIGIN = "http://localhost:5173";
-process.env.DATABASE_URL = "postgresql://portfolio:portfolio_dev_password@localhost:5432/mubarek_portfolio?schema=public";
+process.env.PORT = "4001";
+process.env.WEB_ORIGIN = "http://localhost:3000";
+process.env.DATABASE_URL = "mysql://portfolio:portfolio_dev_password@localhost:3306/mubarek_portfolio";
 process.env.SESSION_SECRET = "test-only-session-secret-that-is-long-enough";
+process.env.SESSION_COOKIE_SECURE = "false";
+process.env.SESSION_COOKIE_SAME_SITE = "lax";
 process.env.GITHUB_USERNAME = "mubarekcr7";
 
 let app: (typeof import("./app.js"))["app"];
@@ -16,6 +18,7 @@ describe("HTTP API without a database connection", () => {
     const response = await request(app).get("/healthz");
     expect(response.status).toBe(200);
     expect(response.body.status).toBe("ok");
+    expect(response.headers["x-frame-options"]).toBeUndefined();
   });
 
   it("does not allow anonymous dashboard access", async () => {

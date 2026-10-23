@@ -2,12 +2,13 @@ import cors from "cors";
 import { rateLimit } from "express-rate-limit";
 import express from "express";
 import session from "express-session";
-import connectPgSimple from "connect-pg-simple";
 import helmet from "helmet";
 import { pinoHttp } from "pino-http";
 import swaggerUi from "swagger-ui-express";
 import { env } from "./config/env.js";
-import { sessionPool } from "./config/database.js";
+import { prisma } from "./config/database.js";
+import { PrismaSessionStore } from "./config/prisma-session-store.js";
+import { sessionCookieOptions } from "./config/session-cookie.js";
 import { adminRouter } from "./routes/admin.js";
 import { authRouter } from "./routes/auth.js";
 import { contactRouter } from "./routes/contact.js";
@@ -18,13 +19,14 @@ import { errorHandler, notFound } from "./middleware/error-handler.js";
 import { openApiDocument } from "./openapi.js";
 import { logger } from "./utils/logger.js";
 
-const PgStore = connectPgSimple(session);
 export const app = express();
-if (env.NODE_ENV === "production") app.set("trust proxy", 1);
+// Preview and production traffic arrive through one trusted platform proxy.
+app.set("trust proxy", 1);
 
 app.disable("x-powered-by");
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
+  xFrameOptions: false,
   contentSecurityPolicy: env.NODE_ENV === "production" ? { directives: {
     defaultSrc: ["'self'"], scriptSrc: ["'self'"], styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
     styleSrcAttr: ["'unsafe-inline'"], fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"], imgSrc: ["'self'", "data:", "https:"],
@@ -36,18 +38,18 @@ app.use(express.json({ limit: "10kb" }));
 app.use(pinoHttp({ logger }));
 app.use(session({
   name: "mubarek.sid",
-  store: new PgStore({ pool: sessionPool, tableName: "session", createTableIfMissing: true }),
+  store: new PrismaSessionStore(),
   secret: env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: { httpOnly: true, secure: env.NODE_ENV === "production", sameSite: "lax", maxAge: 1000 * 60 * 60 * 8 },
+  cookie: sessionCookieOptions,
 }));
 
 const apiLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 180, standardHeaders: "draft-8", legacyHeaders: false });
 app.get("/healthz", (_request, response) => response.json({ status: "ok", service: "portfolio-api" }));
 app.get("/healthz/ready", async (_request, response) => {
   try {
-    await sessionPool.query("SELECT 1");
+    await prisma.$queryRaw`SELECT 1`;
     response.json({ status: "ready", database: "connected" });
   } catch {
     response.status(503).json({ status: "not-ready", database: "unavailable" });
