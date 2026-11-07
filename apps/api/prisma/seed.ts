@@ -26,39 +26,40 @@ const projects = [
     githubUrl: "https://github.com/mubarekcr7/exam-scheduler",
   },
   {
-    title: "Banking Management System",
-    slug: "banking-management-system",
-    shortDescription: "A C++ console application for account records and basic banking operations.",
-    fullDescription: "The repository's C++ console program lets an operator create, list, edit, and search account records, make deposits and withdrawals, transfer balances between accounts, and remove accounts. This describes the source code in the public repository, not a production banking service.",
+    title: "Exam Scheduling System",
+    slug: "exam-scheduling-system",
+    shortDescription: "A second academic implementation for exploring university exam scheduling workflows.",
+    fullDescription: "An academic exam-scheduling project focused on organizing examinations and related university scheduling workflows. The repository is linked directly so visitors can review the implementation and its progress.",
     problem: null,
     solution: null,
-    features: ["Create, list, edit, and search account records", "Deposit, withdraw, and transfer balances", "Delete one or all account records"],
-    technologies: ["C++"],
+    features: ["Explore exam scheduling workflows", "Review the academic implementation in GitHub"],
+    technologies: ["Dart", "Flutter", "Firebase"],
+    category: "Academic project",
+    githubUrl: "https://github.com/mubarekcr7/ExamSchedulingSystem",
+  },
+  {
+    title: "CareAudit",
+    slug: "careaudit",
+    shortDescription: "A personal project focused on surgical monitoring and care-audit workflows.",
+    fullDescription: "CareAudit is the selected personal project for this portfolio, presenting the idea of surgical monitoring with a care-audit perspective. The repository remains the source of truth for the current implementation and progress.",
+    problem: null,
+    solution: null,
+    features: ["Surgical monitoring concept", "Care-audit workflow exploration"],
+    technologies: ["Software engineering", "Monitoring"],
     category: "Personal project",
-    githubUrl: "https://github.com/mubarekcr7/banking_management",
+    githubUrl: "https://github.com/mubarekcr7/CareAudit",
   },
   {
-    title: "University Management System",
-    slug: "university-management-system",
-    shortDescription: "A learning project for managing university-related entities and operations.",
-    fullDescription: "A learning project exploring university management workflows. Dart is part of the stated technology direction; Flutter integration is planned as development progresses. Specific implemented features are intentionally left unclaimed until confirmed.",
+    title: "Exam Scheduling — Learning Track",
+    slug: "exam-scheduling-learning-track",
+    shortDescription: "A learning entry built from the same exam-scheduling work used in the academic projects.",
+    fullDescription: "This learning entry intentionally points to the same exam-scheduling work used for the academic portfolio entries, making the connection between coursework and continued practice explicit.",
     problem: null,
     solution: null,
-    features: [],
-    technologies: ["Dart"],
+    features: ["Reuse academic work as a learning reference", "Track continued development through GitHub"],
+    technologies: ["Dart", "Flutter", "Firebase"],
     category: "Learning project",
-  },
-  {
-    title: "Web Learning Portfolio",
-    slug: "web-learning-portfolio",
-    shortDescription: "A multi-page personal site and hands-on HTML/CSS learning project.",
-    fullDescription: "The repository contains a personal portfolio page linking to practice pages, including HTML/CSS layout and hover-effect exercises, plus a nested Bootstrap-project page. It is a learning collection rather than a production application.",
-    problem: null,
-    solution: null,
-    features: ["Multi-page navigation across practice pages", "HTML/CSS layout and styling exercises", "CSS hover, transition, and responsive-layout examples"],
-    technologies: ["HTML", "CSS"],
-    category: "Learning project",
-    githubUrl: "https://github.com/mubarekcr7/web-learning-portefelow",
+    githubUrl: "https://github.com/mubarekcr7/ExamSchedulingSystem",
   },
   {
     title: "AI-Based Surgical Monitoring System",
@@ -116,22 +117,21 @@ async function main(): Promise<void> {
       displayOrder: 0,
     },
   });
-  for (const project of projects) {
-    const isOngoing = [
-      "student-exam-scheduling-system",
-      "banking-management-system",
-      "university-management-system",
-      "web-learning-portfolio",
-      "ai-based-surgical-monitoring-system",
-    ].includes(project.slug);
-    await prisma.project.upsert({ where: { slug: project.slug }, update: {}, create: {
+  for (const [index, project] of projects.entries()) {
+    const record = {
       ...project,
       features: [...project.features],
       technologies: [...project.technologies],
-      status: isOngoing ? "IN_PROGRESS" : "DRAFT",
-      featured: isOngoing,
-    } });
+      status: "IN_PROGRESS" as const,
+      featured: true,
+      displayOrder: index,
+    };
+    await prisma.project.upsert({ where: { slug: project.slug }, update: record, create: record });
   }
+  await prisma.project.updateMany({
+    where: { slug: { in: ["banking-management-system", "university-management-system", "web-learning-portfolio"] } },
+    data: { status: "DRAFT", featured: false },
+  });
 }
 
 main().catch((error: unknown) => {

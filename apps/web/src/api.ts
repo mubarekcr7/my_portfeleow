@@ -20,8 +20,9 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   }
   const response = await fetch(`${base}${path}`, { ...init, method, headers, credentials: "include" });
   if (response.status === 204) return undefined as T;
-  const body = await response.json() as { data?: T; error?: { message?: string } };
+  const body = await response.json() as { data?: T; pagination?: { page: number; limit: number; total: number; pages: number }; error?: { message?: string } };
   if (!response.ok) throw new ApiError(body.error?.message ?? "The request could not be completed.", response.status);
+  if (body.pagination) return { data: body.data, pagination: body.pagination } as T;
   return body.data as T;
 }
 
